@@ -267,7 +267,7 @@
       </nav>
     </div>
   </header>
-
+  
   <!-- Main Content Container -->
   <main class="flex-grow max-w-7xl mx-auto px-4 py-6 w-full">
     <div class="main-container flex flex-col md:flex-row gap-6">
@@ -321,7 +321,7 @@
           </ul>
         </div>
       </section>
-
+      
       <!-- Main Content Component: Verses Display -->
       <section aria-atomic="true" aria-live="polite" class="md:w-3/4 bg-white rounded-2xl shadow-xl p-6 flex flex-col" id="verses-section" tabindex="0">
         <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
@@ -359,7 +359,7 @@
       </section>
     </div>
   </main>
-
+  
   <!-- Notes Modal Component -->
   <div aria-modal="true" aria-labelledby="notes-modal-title" aria-describedby="notes-modal-desc" class="modal fixed inset-0 items-center justify-center z-50 hidden" id="notes-modal" role="dialog" tabindex="-1">
     <div class="modal-content max-w-lg w-full mx-4 p-6">
@@ -375,7 +375,7 @@
       </div>
     </div>
   </div>
-
+  
   <!-- Favorites & Notes Panel Component -->
   <aside aria-label="Favorites and Notes panel" class="favorites-panel fixed right-0 top-16 w-80 max-h-[calc(100vh-5rem)] p-4 z-40 hidden flex-col overflow-y-auto" id="favorites-notes-panel" role="region" aria-live="polite" aria-atomic="true" tabindex="0">
     <h3 class="text-xl font-bold text-indigo-900 mb-4">Favorites & Notes</h3>
@@ -390,12 +390,12 @@
       <div id="notes-list" role="list" aria-label="List of notes"></div>
     </div>
   </aside>
-
+  
   <!-- Toggle Favorites/Notes Panel Button -->
   <button aria-label="Toggle favorites and notes panel" class="fixed right-4 bottom-4 bg-indigo-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg z-50 hover:bg-indigo-700 transition-colors" id="toggle-favorites-notes" title="Favorites & Notes">
     <i class="fas fa-star"></i>
   </button>
-
+  
   <!-- Footer Component -->
   <footer class="bg-indigo-900 text-indigo-200 py-6 mt-8 select-none">
     <div class="max-w-7xl mx-auto px-4 text-center text-sm">
@@ -410,9 +410,9 @@
       </p>
     </div>
   </footer>
-
+  
   <script>
-    // Bible API base URL
+    // ==================== GLOBAL VARIABLES ====================
     const API_BASE = "https://bible-api.com/";
     
     // Books of the Bible with chapters count (Protestant canon)
@@ -510,6 +510,7 @@
     const btnCloseNotes = document.getElementById("btn-close-notes");
     const btnSaveNote = document.getElementById("btn-save-note");
     const btnCancelNote = document.getElementById("btn-cancel-note");
+    const versesSection = document.getElementById("verses-section");
     
     let selectedVerseElement = null;
     let currentNoteVerseKey = null;
@@ -522,806 +523,831 @@
     let favorites = JSON.parse(localStorage.getItem(STORAGE_FAVORITES_KEY)) || {};
     let notes = JSON.parse(localStorage.getItem(STORAGE_NOTES_KEY)) || {};
     
-    // Initialize book select options
-    function initBooks() {
-      books.forEach((book) => {
-        const option = document.createElement("option");
-        option.value = book.name;
-        option.textContent = book.name;
-        bookSelect.appendChild(option);
-      });
-    }
-    
-    // Populate chapters based on selected book
-    function populateChapters(bookName) {
-      chapterSelect.innerHTML = "";
-      const book = books.find((b) => b.name === bookName);
-      if (!book) {
-        chapterSelect.disabled = true;
-        btnLoadChapter.disabled = true;
-        return;
-      }
+    // ==================== HEADER COMPONENT ====================
+    const HeaderComponent = {
+      init: function() {
+        // Navigation button event listeners
+        btnToday.addEventListener("click", this.showTodaysVerse);
+        btnDevotion.addEventListener("click", this.showDevotionals);
+        btnAbout.addEventListener("click", this.showAbout);
+        btnBible.addEventListener("click", this.showBibleSection);
+      },
       
-      for (let i = 1; i <= book.chapters; i++) {
-        const option = document.createElement("option");
-        option.value = i;
-        option.textContent = i;
-        chapterSelect.appendChild(option);
-      }
+      showTodaysVerse: function() {
+        BibleContentComponent.clearSelectedVerse();
+        initialVerse?.remove();
+        versesSection.scrollIntoView({ behavior: "smooth" });
+        
+        chapterTitle.textContent = "Today's Inspirational Verse";
+        
+        // Show loading spinner
+        versesContainer.innerHTML = `
+          <div class="flex justify-center items-center space-x-3 text-indigo-700 py-12">
+            <div class="spinner"></div>
+            <span class="text-xl font-medium">Loading today's verse...</span>
+          </div>
+        `;
+        
+        // Pick a random book from spiritual books
+        const spiritualBooks = ["Psalms", "Proverbs", "Isaiah", "John"];
+        const book = spiritualBooks[Math.floor(Math.random() * spiritualBooks.length)];
+        
+        // Pick a random chapter and verse within that book
+        const bookData = books.find((b) => b.name === book);
+        if (!bookData) return;
+        
+        const chapter = Math.floor(Math.random() * bookData.chapters) + 1;
+        
+        BibleContentComponent.loadRandomVerse(book, chapter);
+      },
       
-      chapterSelect.disabled = false;
-      btnLoadChapter.disabled = false;
-    }
-    
-    // Clear verse selection highlight
-    function clearSelectedVerse() {
-      if (selectedVerseElement) {
-        selectedVerseElement.classList.remove("selected");
-        selectedVerseElement = null;
+      showDevotionals: function() {
+        BibleContentComponent.clearSelectedVerse();
+        initialVerse?.remove();
+        versesSection.scrollIntoView({ behavior: "smooth" });
+        
+        chapterTitle.textContent = "Daily Devotionals";
+        
+        const devotionals = [
+          {
+            title: "Faith that Moves Mountains",
+            scripture: "Matthew 17:20",
+            text: "Truly, faith as small as a mustard seed can move mountains. Let your heart be filled with unwavering trust in God's power and love.",
+            image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+            alt: "Mountain with sunrise symbolizing faith and hope",
+          },
+          {
+            title: "Peace in the Storm",
+            scripture: "Mark 4:39",
+            text: "Jesus calms the storm with a word. In your life's tempests, remember His peace that surpasses all understanding.",
+            image: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+            alt: "Calm sea with storm clouds parting, symbolizing peace amidst chaos",
+          },
+          {
+            title: "Light of the World",
+            scripture: "John 8:12",
+            text: "Walk in the light of Christ, the lamp that guides your path through darkness and uncertainty.",
+            image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+            alt: "Light shining through darkness symbolizing guidance and hope",
+          },
+          {
+            title: "Love Never Fails",
+            scripture: "1 Corinthians 13:8",
+            text: "God's love is eternal and unfailing. Let it transform your heart and overflow to those around you.",
+            image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+            alt: "Heart symbolizing eternal love and compassion",
+          },
+          {
+            title: "Strength in Weakness",
+            scripture: "2 Corinthians 12:9",
+            text: "God's grace is sufficient, and His power is made perfect in weakness. Embrace your vulnerabilities and find strength in Him.",
+            image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+            alt: "Tree symbolizing resilience and divine strength",
+          },
+        ];
+        
+        versesContainer.innerHTML = "";
+        
+        devotionals.forEach((devotion, index) => {
+          const devotionEl = document.createElement("article");
+          devotionEl.className = `mb-8 bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row fade-in`;
+          devotionEl.style.animationDelay = `${index * 0.1}s`;
+          
+          const img = document.createElement("img");
+          img.src = devotion.image;
+          img.alt = devotion.alt;
+          img.className = "w-full md:w-1/3 h-48 object-cover";
+          
+          const content = document.createElement("div");
+          content.className = "p-6 flex-1";
+          
+          const title = document.createElement("h3");
+          title.className = "text-indigo-900 font-playfair text-2xl font-bold mb-2 tracking-wide select-none";
+          title.textContent = devotion.title;
+          
+          const scripture = document.createElement("p");
+          scripture.className = "text-indigo-600 font-medium italic mb-3 select-none";
+          scripture.textContent = devotion.scripture;
+          
+          const text = document.createElement("p");
+          text.className = "text-gray-700 leading-relaxed";
+          text.textContent = devotion.text;
+          
+          content.appendChild(title);
+          content.appendChild(scripture);
+          content.appendChild(text);
+          
+          devotionEl.appendChild(img);
+          devotionEl.appendChild(content);
+          versesContainer.appendChild(devotionEl);
+        });
+      },
+      
+      showAbout: function() {
+        BibleContentComponent.clearSelectedVerse();
+        initialVerse?.remove();
+        versesSection.scrollIntoView({ behavior: "smooth" });
+        
+        chapterTitle.textContent = "About The Spiritual Bible";
+        
+        versesContainer.innerHTML = `
+          <div class="max-w-4xl mx-auto prose prose-indigo text-gray-700 select-text">
+            <div class="bg-indigo-50 rounded-xl p-6 mb-8 border border-indigo-100">
+              <p class="text-xl text-indigo-800 font-medium mb-4">
+                Welcome to <strong class="text-indigo-900">The Spiritual Bible</strong>, a sacred sanctuary where the breath of God fills every word and awakens your soul.
+              </p>
+              <p>
+                This digital Bible experience is crafted with reverence, beauty, and a deep desire to inspire your spiritual journey.
+              </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div class="bg-white p-6 rounded-xl shadow-sm border border-indigo-100">
+                <h3 class="text-lg font-bold text-indigo-900 mb-3">Features</h3>
+                <ul class="space-y-2">
+                  <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <span>Multiple Bible translations</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <span>Favorite and save meaningful verses</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <span>Add personal notes to reflect on scripture</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                    <span>Daily devotionals for spiritual growth</span>
+                  </li>
+                </ul>
+              </div>
+              
+            </div>
+            
+            <div class="bg-indigo-900 text-indigo-100 rounded-xl p-6 text-center">
+              <p class="italic font-playfair text-lg mb-2">
+                "Your word is a lamp to my feet and a light to my path." – Psalm 119:105
+              </p>
+              <p class="text-indigo-300">
+                May this digital sanctuary bless your spiritual journey.
+              </p>
+            </div>
+          </div>
+        `;
+      },
+      
+      showBibleSection: function() {
+        document.getElementById("sidebar").scrollIntoView({ behavior: "smooth" });
+        chapterTitle.textContent = "Awaken Your Soul";
+        versesContainer.innerHTML = `
+          <p class="text-center text-indigo-500 italic select-none text-xl max-w-3xl mx-auto leading-relaxed">
+            "The breath of God whispers through these sacred words, awakening your spirit and illuminating your path. May you find peace, hope, and divine love here."
+          </p>
+          <div class="mt-10 max-w-3xl mx-auto bg-indigo-50 rounded-3xl p-8 shadow-lg border border-indigo-200 prose prose-indigo text-center text-indigo-900 select-text" id="initial-verse">
+            <p class="text-3xl font-playfair italic leading-relaxed mb-6 before:content-['"'] after:content-['"'] before:text-indigo-400 after:text-indigo-400 before:text-7xl after:text-7xl before:relative after:relative before:-left-4 after:-right-4">
+              "The Lord is my shepherd; I shall not want."
+            </p>
+            <p class="text-lg font-semibold mt-4 select-none">— Psalm 23:1 (NIV)</p>
+            <p class="mt-6 text-indigo-700 font-semibold">Let this timeless promise comfort and guide your heart today.</p>
+          </div>
+        `;
+        BibleContentComponent.clearSelectedVerse();
         btnCopySelected.disabled = true;
       }
-    }
+    };
     
-    // Save favorites to localStorage
-    function saveFavorites() {
-      localStorage.setItem(STORAGE_FAVORITES_KEY, JSON.stringify(favorites));
-    }
-    
-    // Save notes to localStorage
-    function saveNotes() {
-      localStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(notes));
-    }
-    
-    // Render favorites list in panel
-    function renderFavorites() {
-      favoritesList.innerHTML = "";
-      const keys = Object.keys(favorites);
-      
-      if (keys.length === 0) {
-        favoritesList.innerHTML = `<p class="text-indigo-500 italic select-none">No favorite verses yet.</p>`;
-        return;
-      }
-      
-      keys.forEach((key) => {
-        const fav = favorites[key];
-        const item = document.createElement("div");
-        item.className = "favorite-item bg-indigo-50 rounded-lg p-3 mb-2 cursor-pointer";
-        item.setAttribute("role", "listitem");
-        item.tabIndex = 0;
-        item.title = `Go to ${fav.book} ${fav.chapter}:${fav.verse} (${fav.version.toUpperCase()})`;
+    // ==================== SIDEBAR COMPONENT ====================
+    const SidebarComponent = {
+      init: function() {
+        this.initBooks();
         
-        const text = fav.text.length > 60 ? fav.text.slice(0, 60) + "…" : fav.text;
-        item.innerHTML = `
-          <div class="font-medium">${fav.book} ${fav.chapter}:${fav.verse} (${fav.version.toUpperCase()})</div>
-          <div class="text-sm text-indigo-700 mt-1">${text}</div>
-        `;
-        
-        // On click, load that verse's chapter and highlight verse
-        item.addEventListener("click", () => {
-          bookSelect.value = fav.book;
-          populateChapters(fav.book);
-          chapterSelect.value = fav.chapter;
-          chapterSelect.disabled = false;
-          versionSelect.value = fav.version;
-          btnLoadChapter.disabled = false;
-          
-          loadChapter(fav.book, fav.chapter, fav.version).then(() => {
-            // After loading, highlight the verse
-            setTimeout(() => {
-              const verseEls = [...document.querySelectorAll(".verse")];
-              const targetVerse = verseEls.find(v => v.dataset.verseNumber == fav.verse);
-              
-              if (targetVerse) {
-                if (selectedVerseElement) selectedVerseElement.classList.remove("selected");
-                targetVerse.classList.add("selected");
-                selectedVerseElement = targetVerse;
-                btnCopySelected.disabled = false;
-                targetVerse.scrollIntoView({behavior: "smooth", block: "center"});
-              }
-            }, 500);
-          });
+        // Event listeners
+        bookSelect.addEventListener("change", this.handleBookChange);
+        chapterSelect.addEventListener("change", this.handleChapterChange);
+        versionSelect.addEventListener("change", this.handleVersionChange);
+        btnLoadChapter.addEventListener("click", this.handleLoadChapter);
+      },
+      
+      initBooks: function() {
+        books.forEach((book) => {
+          const option = document.createElement("option");
+          option.value = book.name;
+          option.textContent = book.name;
+          bookSelect.appendChild(option);
         });
-        
-        // Remove favorite button
-        const removeBtn = document.createElement("button");
-        removeBtn.className = "remove-btn text-indigo-500 hover:text-indigo-700 mt-2 text-sm";
-        removeBtn.setAttribute("aria-label", `Remove favorite ${fav.book} ${fav.chapter}:${fav.verse}`);
-        removeBtn.innerHTML = "<i class='fas fa-trash-alt mr-1'></i> Remove";
-        removeBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          delete favorites[key];
-          saveFavorites();
-          renderFavorites();
-        });
-        
-        item.appendChild(removeBtn);
-        favoritesList.appendChild(item);
-      });
-    }
-    
-    // Render notes list in panel
-    function renderNotes() {
-      notesList.innerHTML = "";
-      const keys = Object.keys(notes);
+      },
       
-      if (keys.length === 0) {
-        notesList.innerHTML = `<p class="text-indigo-500 italic select-none">No notes yet.</p>`;
-        return;
-      }
-      
-      keys.forEach((key) => {
-        const note = notes[key];
-        const item = document.createElement("div");
-        item.className = "note-item bg-indigo-50 rounded-lg p-3 mb-2 cursor-pointer";
-        item.setAttribute("role", "listitem");
-        item.tabIndex = 0;
-        item.title = `Go to note for ${note.book} ${note.chapter}:${note.verse} (${note.version.toUpperCase()})`;
-        
-        const previewText = note.noteText.length > 60 ? note.noteText.slice(0, 60) + "…" : note.noteText;
-        item.innerHTML = `
-          <div class="font-medium">${note.book} ${note.chapter}:${note.verse} (${note.version.toUpperCase()})</div>
-          <div class="text-sm text-indigo-700 mt-1">${previewText}</div>
-        `;
-        
-        // On click, open note modal to edit
-        item.addEventListener("click", () => {
-          openNoteModal(key);
-        });
-        
-        // Remove note button
-        const removeBtn = document.createElement("button");
-        removeBtn.className = "remove-btn text-indigo-500 hover:text-indigo-700 mt-2 text-sm";
-        removeBtn.setAttribute("aria-label", `Remove note for ${note.book} ${note.chapter}:${note.verse}`);
-        removeBtn.innerHTML = "<i class='fas fa-trash-alt mr-1'></i> Remove";
-        removeBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          delete notes[key];
-          saveNotes();
-          renderNotes();
-        });
-        
-        item.appendChild(removeBtn);
-        notesList.appendChild(item);
-      });
-    }
-    
-    // Generate a unique key for verse (used for favorites and notes)
-    function generateVerseKey(book, chapter, verse, version) {
-      return `${book}_${chapter}_${verse}_${version}`;
-    }
-    
-    // Toggle favorite for a verse
-    function toggleFavorite(verseEl) {
-      const book = verseEl.dataset.book;
-      const chapter = verseEl.dataset.chapter;
-      const verseNum = verseEl.dataset.verseNumber;
-      const version = verseEl.dataset.version;
-      const text = verseEl.dataset.text;
-      const key = generateVerseKey(book, chapter, verseNum, version);
-      
-      if (favorites[key]) {
-        delete favorites[key];
-        verseEl.querySelector(".btn-favorite").classList.remove("favorited");
-      } else {
-        favorites[key] = { book, chapter, verse: verseNum, version, text };
-        verseEl.querySelector(".btn-favorite").classList.add("favorited");
-      }
-      
-      saveFavorites();
-      renderFavorites();
-    }
-    
-    // Open note modal for a verse key (new or existing)
-    function openNoteModal(verseKey) {
-      currentNoteVerseKey = verseKey;
-      const note = notes[verseKey];
-      
-      if (note) {
-        notesModalTitle.textContent = `Edit Note for ${note.book} ${note.chapter}:${note.verse} (${note.version.toUpperCase()})`;
-        notesModalDesc.textContent = `"${note.text}"`;
-        noteTextarea.value = note.noteText || "";
-      } else {
-        // Parse key to get verse info
-        const parts = verseKey.split("_");
-        if (parts.length === 4) {
-          notesModalTitle.textContent = `Add Note for ${parts[0]} ${parts[1]}:${parts[2]} (${parts[3].toUpperCase()})`;
-          notesModalDesc.textContent = "";
-          noteTextarea.value = "";
-        }
-      }
-      
-      notesModal.classList.remove("hidden");
-      notesModal.classList.add("flex");
-      noteTextarea.focus();
-    }
-    
-    // Close note modal
-    function closeNoteModal() {
-      notesModal.classList.add("hidden");
-      notesModal.classList.remove("flex");
-      currentNoteVerseKey = null;
-      noteTextarea.value = "";
-    }
-    
-    // Save note from modal
-    function saveNote() {
-      if (!currentNoteVerseKey) return;
-      
-      const noteText = noteTextarea.value.trim();
-      if (noteText.length === 0) {
-        // If empty note, remove it
-        if (notes[currentNoteVerseKey]) {
-          delete notes[currentNoteVerseKey];
-          saveNotes();
-          renderNotes();
-        }
-      } else {
-        // Save or update note
-        // Parse key for verse info
-        const parts = currentNoteVerseKey.split("_");
-        if (parts.length === 4) {
-          notes[currentNoteVerseKey] = {
-            book: parts[0],
-            chapter: parts[1],
-            verse: parts[2],
-            version: parts[3],
-            noteText,
-            text: favorites[currentNoteVerseKey]?.text || "", // if favorite, keep verse text
-          };
-          saveNotes();
-          renderNotes();
-        }
-      }
-      
-      closeNoteModal();
-    }
-    
-    // Add favorite and note buttons to each verse element
-    function addVerseControls(verseEl) {
-      // Create favorite star button
-      const favBtn = document.createElement("button");
-      favBtn.className = "btn-favorite absolute right-12 top-1/2 transform -translate-y-1/2 text-indigo-400 hover:text-yellow-500 focus:outline-none";
-      favBtn.setAttribute("aria-label", "Add or remove favorite");
-      favBtn.title = "Add or remove favorite";
-      favBtn.innerHTML = '<i class="fas fa-star text-xl"></i>';
-      
-      // Mark if already favorited
-      const key = generateVerseKey(
-        verseEl.dataset.book,
-        verseEl.dataset.chapter,
-        verseEl.dataset.verseNumber,
-        verseEl.dataset.version
-      );
-      
-      if (favorites[key]) {
-        favBtn.classList.add("favorited", "text-yellow-500");
-      }
-      
-      favBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        toggleFavorite(verseEl);
-      });
-      
-      // Create note button
-      const noteBtn = document.createElement("button");
-      noteBtn.className = "btn-note absolute right-4 top-1/2 transform -translate-y-1/2 text-indigo-400 hover:text-indigo-600 focus:outline-none";
-      noteBtn.setAttribute("aria-label", "Add or edit note");
-      noteBtn.title = "Add or edit note";
-      noteBtn.innerHTML = '<i class="fas fa-sticky-note text-xl"></i>';
-      
-      noteBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openNoteModal(key);
-      });
-      
-      verseEl.appendChild(favBtn);
-      verseEl.appendChild(noteBtn);
-    }
-    
-    // Fetch and display chapter verses with spiritual styling and verse click to select
-    async function loadChapter(bookName, chapterNumber, version) {
-      clearSelectedVerse();
-      initialVerse?.remove();
-      
-      // Show loading spinner
-      versesContainer.innerHTML = `
-        <div class="flex justify-center items-center space-x-3 text-indigo-700 py-12">
-          <div class="spinner"></div>
-          <span class="text-xl font-medium">Loading scripture...</span>
-        </div>
-      `;
-      
-      chapterTitle.textContent = `Loading ${bookName} ${chapterNumber} (${version.toUpperCase()})...`;
-      
-      try {
-        // Bible API supports only some versions: kjv, web, asv, bbe, ylt
-        // For unsupported versions (niv, nlt), fallback to web and show a note
-        const supportedVersions = ["kjv", "web", "asv", "bbe", "ylt"];
-        let apiVersion = version.toLowerCase();
-        let versionFallback = false;
-        
-        if (!supportedVersions.includes(apiVersion)) {
-          apiVersion = "web"; // Use WEB as fallback instead of KJV for more modern language
-          versionFallback = true;
-        }
-        
-        const query = encodeURIComponent(`${bookName} ${chapterNumber}`);
-        const url = `${API_BASE}${query}?translation=${apiVersion}`;
-        
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch Bible verses.");
-        
-        const data = await response.json();
-        if (!data.verses || data.verses.length === 0) {
-          versesContainer.innerHTML = `<p class="text-center text-red-600 font-medium text-xl py-8">No verses found for ${bookName} ${chapterNumber}.</p>`;
-          chapterTitle.textContent = `${bookName} ${chapterNumber} (${version.toUpperCase()})`;
+      populateChapters: function(bookName) {
+        chapterSelect.innerHTML = "";
+        const book = books.find((b) => b.name === bookName);
+        if (!book) {
+          chapterSelect.disabled = true;
+          btnLoadChapter.disabled = true;
           return;
         }
         
-        chapterTitle.textContent = `${bookName} ${chapterNumber} (${version.toUpperCase()})`;
+        for (let i = 1; i <= book.chapters; i++) {
+          const option = document.createElement("option");
+          option.value = i;
+          option.textContent = i;
+          chapterSelect.appendChild(option);
+        }
         
-        // Clear container
-        versesContainer.innerHTML = "";
+        chapterSelect.disabled = false;
+        btnLoadChapter.disabled = false;
+      },
+      
+      handleBookChange: function(e) {
+        const bookName = e.target.value;
+        SidebarComponent.populateChapters(bookName);
+        versesContainer.innerHTML = `<p class="text-center text-indigo-500 italic select-none text-xl max-w-3xl mx-auto leading-relaxed mt-12">Select a chapter to read the Word.</p>`;
+        chapterTitle.textContent = "Select Chapter";
+        BibleContentComponent.clearSelectedVerse();
+        btnCopySelected.disabled = true;
+      },
+      
+      handleChapterChange: function() {
+        btnLoadChapter.disabled = false;
+        BibleContentComponent.clearSelectedVerse();
+        btnCopySelected.disabled = true;
+      },
+      
+      handleVersionChange: function() {
+        // If book and chapter selected, reload chapter with new version
+        if (bookSelect.value && chapterSelect.value) {
+          BibleContentComponent.loadChapter(bookSelect.value, chapterSelect.value, versionSelect.value);
+        }
+      },
+      
+      handleLoadChapter: function() {
+        const bookName = bookSelect.value;
+        const chapterNumber = chapterSelect.value;
+        const version = versionSelect.value;
+        if (bookName && chapterNumber && version) {
+          BibleContentComponent.loadChapter(bookName, chapterNumber, version);
+          
+          // Scroll to verses section on small screens
+          if (window.innerWidth <= 768) {
+            setTimeout(() => {
+              versesSection.scrollIntoView({ behavior: "smooth" });
+            }, 300);
+          }
+        }
+      }
+    };
+    
+    // ==================== BIBLE CONTENT COMPONENT ====================
+    const BibleContentComponent = {
+      init: function() {
+        // Copy buttons event listeners
+        btnCopyAll.addEventListener("click", this.copyAllVerses);
+        btnCopySelected.addEventListener("click", this.copySelectedVerse);
+      },
+      
+      clearSelectedVerse: function() {
+        if (selectedVerseElement) {
+          selectedVerseElement.classList.remove("selected");
+          selectedVerseElement = null;
+          btnCopySelected.disabled = true;
+        }
+      },
+      
+      loadChapter: async function(bookName, chapterNumber, version) {
+        this.clearSelectedVerse();
+        initialVerse?.remove();
         
-        // Show fallback note if needed
-        if (versionFallback) {
-          const fallbackNote = document.createElement("div");
-          fallbackNote.className = "bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded";
-          fallbackNote.innerHTML = `
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+        // Show loading spinner
+        versesContainer.innerHTML = `
+          <div class="flex justify-center items-center space-x-3 text-indigo-700 py-12">
+            <div class="spinner"></div>
+            <span class="text-xl font-medium">Loading scripture...</span>
+          </div>
+        `;
+        
+        chapterTitle.textContent = `Loading ${bookName} ${chapterNumber} (${version.toUpperCase()})...`;
+        
+        try {
+          // Bible API supports only some versions: kjv, web, asv, bbe, ylt
+          // For unsupported versions (niv, nlt), fallback to web and show a note
+          const supportedVersions = ["kjv", "web", "asv", "bbe", "ylt"];
+          let apiVersion = version.toLowerCase();
+          let versionFallback = false;
+          
+          if (!supportedVersions.includes(apiVersion)) {
+            apiVersion = "web"; // Use WEB as fallback instead of KJV for more modern language
+            versionFallback = true;
+          }
+          
+          const query = encodeURIComponent(`${bookName} ${chapterNumber}`);
+          const url = `${API_BASE}${query}?translation=${apiVersion}`;
+          
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("Failed to fetch Bible verses.");
+          
+          const data = await response.json();
+          if (!data.verses || data.verses.length === 0) {
+            versesContainer.innerHTML = `<p class="text-center text-red-600 font-medium text-xl py-8">No verses found for ${bookName} ${chapterNumber}.</p>`;
+            chapterTitle.textContent = `${bookName} ${chapterNumber} (${version.toUpperCase()})`;
+            return;
+          }
+          
+          chapterTitle.textContent = `${bookName} ${chapterNumber} (${version.toUpperCase()})`;
+          
+          // Clear container
+          versesContainer.innerHTML = "";
+          
+          // Show fallback note if needed
+          if (versionFallback) {
+            const fallbackNote = document.createElement("div");
+            fallbackNote.className = "bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded";
+            fallbackNote.innerHTML = `
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-yellow-700">
+                    <span class="font-medium">Version note:</span> The selected version (${version.toUpperCase()}) is not available. Displaying World English Bible (WEB) instead.
+                  </p>
+                </div>
               </div>
-              <div class="ml-3">
-                <p class="text-sm text-yellow-700">
-                  <span class="font-medium">Version note:</span> The selected version (${version.toUpperCase()}) is not available. Displaying World English Bible (WEB) instead.
-                </p>
+            `;
+            versesContainer.appendChild(fallbackNote);
+          }
+          
+          // Display each verse with spiritual styling and clickable to select
+          data.verses.forEach((verse, index) => {
+            const verseEl = document.createElement("article");
+            verseEl.className = "verse fade-in bg-white p-4 rounded-lg shadow-sm border border-indigo-100 mb-4";
+            verseEl.setAttribute("role", "listitem");
+            verseEl.setAttribute("tabindex", "0");
+            verseEl.dataset.verseNumber = verse.verse;
+            verseEl.dataset.text = verse.text;
+            verseEl.dataset.book = bookName;
+            verseEl.dataset.chapter = chapterNumber;
+            verseEl.dataset.version = versionFallback ? "web" : version;
+            
+            const numberSpan = document.createElement("span");
+            numberSpan.className = "verse-number";
+            numberSpan.textContent = verse.verse;
+            
+            const textP = document.createElement("p");
+            textP.className = "verse-text";
+            textP.textContent = verse.text;
+            
+            verseEl.appendChild(numberSpan);
+            verseEl.appendChild(textP);
+            
+            // Add favorite and note buttons
+            FavoritesNotesComponent.addVerseControls(verseEl);
+            
+            // Click or keyboard select verse
+            verseEl.addEventListener("click", () => {
+              if (selectedVerseElement) {
+                selectedVerseElement.classList.remove("selected");
+              }
+              verseEl.classList.add("selected");
+              selectedVerseElement = verseEl;
+              btnCopySelected.disabled = false;
+              btnCopySelected.focus();
+            });
+            
+            verseEl.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                verseEl.click();
+              }
+            });
+            
+            versesContainer.appendChild(verseEl);
+          });
+          
+          // Add a spiritual closing message
+          const closingMsg = document.createElement("div");
+          closingMsg.className = "mt-8 text-center italic text-indigo-700 font-playfair text-lg select-none p-4 bg-indigo-50 rounded-lg";
+          closingMsg.textContent = "May these sacred words breathe life into your spirit and illuminate your path.";
+          versesContainer.appendChild(closingMsg);
+          
+          // Scroll to top of verses container
+          versesContainer.scrollTop = 0;
+        } catch (error) {
+          console.error("Error loading verses:", error);
+          versesContainer.innerHTML = `
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded max-w-2xl mx-auto mt-8">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-exclamation-circle text-red-500"></i>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-red-700">
+                    <span class="font-medium">Error loading verses.</span> Please check your internet connection and try again later.
+                  </p>
+                </div>
               </div>
             </div>
           `;
-          versesContainer.appendChild(fallbackNote);
+          chapterTitle.textContent = `${bookName} ${chapterNumber} (${version.toUpperCase()})`;
         }
-        
-        // Display each verse with spiritual styling and clickable to select
-        data.verses.forEach((verse, index) => {
-          const verseEl = document.createElement("article");
-          verseEl.className = "verse fade-in bg-white p-4 rounded-lg shadow-sm border border-indigo-100 mb-4";
-          verseEl.setAttribute("role", "listitem");
-          verseEl.setAttribute("tabindex", "0");
-          verseEl.dataset.verseNumber = verse.verse;
-          verseEl.dataset.text = verse.text;
-          verseEl.dataset.book = bookName;
-          verseEl.dataset.chapter = chapterNumber;
-          verseEl.dataset.version = versionFallback ? "web" : version;
+      },
+      
+      loadRandomVerse: async function(book, chapter) {
+        try {
+          // Fetch the whole chapter first (using WEB as default)
+          const response = await fetch(`${API_BASE}${encodeURIComponent(book + " " + chapter)}?translation=web`);
+          if (!response.ok) throw new Error("Failed to fetch today's verse.");
           
-          const numberSpan = document.createElement("span");
-          numberSpan.className = "verse-number";
-          numberSpan.textContent = verse.verse;
+          const data = await response.json();
+          if (!data.verses || data.verses.length === 0) {
+            versesContainer.innerHTML = `<p class="text-center text-red-600 font-medium text-xl py-8">No verses found.</p>`;
+            return;
+          }
           
-          const textP = document.createElement("p");
-          textP.className = "verse-text";
-          textP.textContent = verse.text;
+          // Pick a random verse from the chapter
+          const verse = data.verses[Math.floor(Math.random() * data.verses.length)];
           
-          verseEl.appendChild(numberSpan);
-          verseEl.appendChild(textP);
-          
-          // Add favorite and note buttons
-          addVerseControls(verseEl);
-          
-          // Click or keyboard select verse
-          verseEl.addEventListener("click", () => {
-            if (selectedVerseElement) {
-              selectedVerseElement.classList.remove("selected");
-            }
-            verseEl.classList.add("selected");
-            selectedVerseElement = verseEl;
-            btnCopySelected.disabled = false;
-            btnCopySelected.focus();
-          });
-          
-          verseEl.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              verseEl.click();
-            }
-          });
-          
-          versesContainer.appendChild(verseEl);
-        });
-        
-        // Add a spiritual closing message
-        const closingMsg = document.createElement("div");
-        closingMsg.className = "mt-8 text-center italic text-indigo-700 font-playfair text-lg select-none p-4 bg-indigo-50 rounded-lg";
-        closingMsg.textContent = "May these sacred words breathe life into your spirit and illuminate your path.";
-        versesContainer.appendChild(closingMsg);
-        
-        // Scroll to top of verses container
-        versesContainer.scrollTop = 0;
-      } catch (error) {
-        console.error("Error loading verses:", error);
-        versesContainer.innerHTML = `
-          <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded max-w-2xl mx-auto mt-8">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <i class="fas fa-exclamation-circle text-red-500"></i>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm text-red-700">
-                  <span class="font-medium">Error loading verses.</span> Please check your internet connection and try again later.
-                </p>
+          // Display the verse with a beautiful spiritual style
+          versesContainer.innerHTML = `
+            <div class="max-w-3xl mx-auto bg-indigo-50 rounded-2xl p-8 shadow-lg border border-indigo-200 text-center text-indigo-900 select-text">
+              <p class="text-4xl font-playfair italic leading-relaxed mb-6 before:content-['"'] after:content-['"'] before:text-indigo-400 after:text-indigo-400 before:text-7xl after:text-7xl before:relative after:relative before:-left-6 after:-right-6">
+                ${verse.text}
+              </p>
+              <p class="text-xl font-semibold mt-6 select-none">— ${book} ${verse.chapter}:${verse.verse} (WEB)</p>
+              <p class="mt-8 text-indigo-700 font-medium tracking-wide">"Let this verse awaken your spirit and fill your heart with divine peace."</p>
+            </div>
+          `;
+        } catch (error) {
+          console.error("Error loading today's verse:", error);
+          versesContainer.innerHTML = `
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded max-w-2xl mx-auto mt-8">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-exclamation-circle text-red-500"></i>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-red-700">
+                    <span class="font-medium">Error loading today's verse.</span> Please check your internet connection and try again later.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        `;
-        chapterTitle.textContent = `${bookName} ${chapterNumber} (${version.toUpperCase()})`;
+          `;
+        }
+      },
+      
+      copyAllVerses: function() {
+        if (!versesContainer.textContent.trim()) return;
+        
+        navigator.clipboard.writeText(versesContainer.textContent.trim()).then(() => {
+          // Show success feedback
+          const originalText = btnCopyAll.innerHTML;
+          btnCopyAll.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
+          btnCopyAll.classList.add("bg-green-500", "text-white");
+          
+          setTimeout(() => {
+            btnCopyAll.innerHTML = originalText;
+            btnCopyAll.classList.remove("bg-green-500", "text-white");
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+          // Show error feedback
+          const originalText = btnCopyAll.innerHTML;
+          btnCopyAll.innerHTML = '<i class="fas fa-times mr-2"></i> Failed';
+          btnCopyAll.classList.add("bg-red-500", "text-white");
+          
+          setTimeout(() => {
+            btnCopyAll.innerHTML = originalText;
+            btnCopyAll.classList.remove("bg-red-500", "text-white");
+          }, 2000);
+        });
+      },
+      
+      copySelectedVerse: function() {
+        if (!selectedVerseElement) return;
+        
+        const book = selectedVerseElement.dataset.book;
+        const chapter = selectedVerseElement.dataset.chapter;
+        const verseNum = selectedVerseElement.dataset.verseNumber;
+        const version = selectedVerseElement.dataset.version.toUpperCase();
+        const text = selectedVerseElement.dataset.text;
+        const fullText = `${book} ${chapter}:${verseNum} (${version}) - "${text}"`;
+        
+        navigator.clipboard.writeText(fullText).then(() => {
+          // Show success feedback
+          const originalText = btnCopySelected.innerHTML;
+          btnCopySelected.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
+          btnCopySelected.classList.add("bg-green-500", "text-white");
+          
+          setTimeout(() => {
+            btnCopySelected.innerHTML = originalText;
+            btnCopySelected.classList.remove("bg-green-500", "text-white");
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+          // Show error feedback
+          const originalText = btnCopySelected.innerHTML;
+          btnCopySelected.innerHTML = '<i class="fas fa-times mr-2"></i> Failed';
+          btnCopySelected.classList.add("bg-red-500", "text-white");
+          
+          setTimeout(() => {
+            btnCopySelected.innerHTML = originalText;
+            btnCopySelected.classList.remove("bg-red-500", "text-white");
+          }, 2000);
+        });
       }
-    }
+    };
     
-    // Copy all verses text to clipboard
-    function copyAllVerses() {
-      if (!versesContainer.textContent.trim()) return;
-      
-      navigator.clipboard.writeText(versesContainer.textContent.trim()).then(() => {
-        // Show success feedback
-        const originalText = btnCopyAll.innerHTML;
-        btnCopyAll.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
-        btnCopyAll.classList.add("bg-green-500", "text-white");
+    // ==================== FAVORITES & NOTES COMPONENT ====================
+    const FavoritesNotesComponent = {
+      init: function() {
+        // Toggle panel button
+        toggleFavoritesNotesBtn.addEventListener("click", this.togglePanel);
         
-        setTimeout(() => {
-          btnCopyAll.innerHTML = originalText;
-          btnCopyAll.classList.remove("bg-green-500", "text-white");
-        }, 2000);
-      }).catch(err => {
-        console.error('Failed to copy: ', err);
-        // Show error feedback
-        const originalText = btnCopyAll.innerHTML;
-        btnCopyAll.innerHTML = '<i class="fas fa-times mr-2"></i> Failed';
-        btnCopyAll.classList.add("bg-red-500", "text-white");
+        // Initialize favorites and notes from storage
+        this.renderFavorites();
+        this.renderNotes();
+      },
+      
+      togglePanel: function() {
+        favoritesNotesPanel.classList.toggle("hidden");
+        if (!favoritesNotesPanel.classList.contains("hidden")) {
+          favoritesNotesPanel.focus();
+        }
+      },
+      
+      saveFavorites: function() {
+        localStorage.setItem(STORAGE_FAVORITES_KEY, JSON.stringify(favorites));
+      },
+      
+      saveNotes: function() {
+        localStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(notes));
+      },
+      
+      renderFavorites: function() {
+        favoritesList.innerHTML = "";
+        const keys = Object.keys(favorites);
         
-        setTimeout(() => {
-          btnCopyAll.innerHTML = originalText;
-          btnCopyAll.classList.remove("bg-red-500", "text-white");
-        }, 2000);
-      });
-    }
-    
-    // Copy selected verse text to clipboard
-    function copySelectedVerse() {
-      if (!selectedVerseElement) return;
-      
-      const book = selectedVerseElement.dataset.book;
-      const chapter = selectedVerseElement.dataset.chapter;
-      const verseNum = selectedVerseElement.dataset.verseNumber;
-      const version = selectedVerseElement.dataset.version.toUpperCase();
-      const text = selectedVerseElement.dataset.text;
-      const fullText = `${book} ${chapter}:${verseNum} (${version}) - "${text}"`;
-      
-      navigator.clipboard.writeText(fullText).then(() => {
-        // Show success feedback
-        const originalText = btnCopySelected.innerHTML;
-        btnCopySelected.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
-        btnCopySelected.classList.add("bg-green-500", "text-white");
-        
-        setTimeout(() => {
-          btnCopySelected.innerHTML = originalText;
-          btnCopySelected.classList.remove("bg-green-500", "text-white");
-        }, 2000);
-      }).catch(err => {
-        console.error('Failed to copy: ', err);
-        // Show error feedback
-        const originalText = btnCopySelected.innerHTML;
-        btnCopySelected.innerHTML = '<i class="fas fa-times mr-2"></i> Failed';
-        btnCopySelected.classList.add("bg-red-500", "text-white");
-        
-        setTimeout(() => {
-          btnCopySelected.innerHTML = originalText;
-          btnCopySelected.classList.remove("bg-red-500", "text-white");
-        }, 2000);
-      });
-    }
-    
-    // Show Today's Verse (random verse from Psalms or Proverbs or Isaiah or John)
-    async function showTodaysVerse() {
-      clearSelectedVerse();
-      initialVerse?.remove();
-      document.getElementById("verses-section").scrollIntoView({ behavior: "smooth" });
-      
-      chapterTitle.textContent = "Today's Inspirational Verse";
-      
-      // Show loading spinner
-      versesContainer.innerHTML = `
-        <div class="flex justify-center items-center space-x-3 text-indigo-700 py-12">
-          <div class="spinner"></div>
-          <span class="text-xl font-medium">Loading today's verse...</span>
-        </div>
-      `;
-      
-      // Pick a random book from spiritual books
-      const spiritualBooks = ["Psalms", "Proverbs", "Isaiah", "John"];
-      const book = spiritualBooks[Math.floor(Math.random() * spiritualBooks.length)];
-      
-      // Pick a random chapter and verse within that book
-      const bookData = books.find((b) => b.name === book);
-      if (!bookData) return;
-      
-      const chapter = Math.floor(Math.random() * bookData.chapters) + 1;
-      
-      try {
-        // Fetch the whole chapter first (using WEB as default)
-        const response = await fetch(`${API_BASE}${encodeURIComponent(book + " " + chapter)}?translation=web`);
-        if (!response.ok) throw new Error("Failed to fetch today's verse.");
-        
-        const data = await response.json();
-        if (!data.verses || data.verses.length === 0) {
-          versesContainer.innerHTML = `<p class="text-center text-red-600 font-medium text-xl py-8">No verses found.</p>`;
+        if (keys.length === 0) {
+          favoritesList.innerHTML = `<p class="text-indigo-500 italic select-none">No favorite verses yet.</p>`;
           return;
         }
         
-        // Pick a random verse from the chapter
-        const verse = data.verses[Math.floor(Math.random() * data.verses.length)];
-        
-        // Display the verse with a beautiful spiritual style
-        versesContainer.innerHTML = `
-          <div class="max-w-3xl mx-auto bg-indigo-50 rounded-2xl p-8 shadow-lg border border-indigo-200 text-center text-indigo-900 select-text">
-            <p class="text-4xl font-playfair italic leading-relaxed mb-6 before:content-['"'] after:content-['"'] before:text-indigo-400 after:text-indigo-400 before:text-7xl after:text-7xl before:relative after:relative before:-left-6 after:-right-6">
-              ${verse.text}
-            </p>
-            <p class="text-xl font-semibold mt-6 select-none">— ${book} ${verse.chapter}:${verse.verse} (WEB)</p>
-            <p class="mt-8 text-indigo-700 font-medium tracking-wide">"Let this verse awaken your spirit and fill your heart with divine peace."</p>
-          </div>
-        `;
-      } catch (error) {
-        console.error("Error loading today's verse:", error);
-        versesContainer.innerHTML = `
-          <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded max-w-2xl mx-auto mt-8">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <i class="fas fa-exclamation-circle text-red-500"></i>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm text-red-700">
-                  <span class="font-medium">Error loading today's verse.</span> Please check your internet connection and try again later.
-                </p>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-    }
-    
-    // Show Devotionals Section
-    function showDevotionals() {
-      clearSelectedVerse();
-      initialVerse?.remove();
-      document.getElementById("verses-section").scrollIntoView({ behavior: "smooth" });
-      
-      chapterTitle.textContent = "Daily Devotionals";
-      
-      const devotionals = [
-        {
-          title: "Faith that Moves Mountains",
-          scripture: "Matthew 17:20",
-          text: "Truly, faith as small as a mustard seed can move mountains. Let your heart be filled with unwavering trust in God's power and love.",
-          image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-          alt: "Mountain with sunrise symbolizing faith and hope",
-        },
-        {
-          title: "Peace in the Storm",
-          scripture: "Mark 4:39",
-          text: "Jesus calms the storm with a word. In your life's tempests, remember His peace that surpasses all understanding.",
-          image: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-          alt: "Calm sea with storm clouds parting, symbolizing peace amidst chaos",
-        },
-        {
-          title: "Light of the World",
-          scripture: "John 8:12",
-          text: "Walk in the light of Christ, the lamp that guides your path through darkness and uncertainty.",
-          image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-          alt: "Light shining through darkness symbolizing guidance and hope",
-        },
-        {
-          title: "Love Never Fails",
-          scripture: "1 Corinthians 13:8",
-          text: "God's love is eternal and unfailing. Let it transform your heart and overflow to those around you.",
-          image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-          alt: "Heart symbolizing eternal love and compassion",
-        },
-        {
-          title: "Strength in Weakness",
-          scripture: "2 Corinthians 12:9",
-          text: "God's grace is sufficient, and His power is made perfect in weakness. Embrace your vulnerabilities and find strength in Him.",
-          image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-          alt: "Tree symbolizing resilience and divine strength",
-        },
-      ];
-      
-      versesContainer.innerHTML = "";
-      
-      devotionals.forEach((devotion, index) => {
-        const devotionEl = document.createElement("article");
-        devotionEl.className = `mb-8 bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row fade-in`;
-        devotionEl.style.animationDelay = `${index * 0.1}s`;
-        
-        const img = document.createElement("img");
-        img.src = devotion.image;
-        img.alt = devotion.alt;
-        img.className = "w-full md:w-1/3 h-48 object-cover";
-        
-        const content = document.createElement("div");
-        content.className = "p-6 flex-1";
-        
-        const title = document.createElement("h3");
-        title.className = "text-indigo-900 font-playfair text-2xl font-bold mb-2 tracking-wide select-none";
-        title.textContent = devotion.title;
-        
-        const scripture = document.createElement("p");
-        scripture.className = "text-indigo-600 font-medium italic mb-3 select-none";
-        scripture.textContent = devotion.scripture;
-        
-        const text = document.createElement("p");
-        text.className = "text-gray-700 leading-relaxed";
-        text.textContent = devotion.text;
-        
-        content.appendChild(title);
-        content.appendChild(scripture);
-        content.appendChild(text);
-        
-        devotionEl.appendChild(img);
-        devotionEl.appendChild(content);
-        versesContainer.appendChild(devotionEl);
-      });
-    }
-    
-    // Show About Section
-    function showAbout() {
-      clearSelectedVerse();
-      initialVerse?.remove();
-      document.getElementById("verses-section").scrollIntoView({ behavior: "smooth" });
-      
-      chapterTitle.textContent = "About The Spiritual Bible";
-      
-      versesContainer.innerHTML = `
-        <div class="max-w-4xl mx-auto prose prose-indigo text-gray-700 select-text">
-          <div class="bg-indigo-50 rounded-xl p-6 mb-8 border border-indigo-100">
-            <p class="text-xl text-indigo-800 font-medium mb-4">
-              Welcome to <strong class="text-indigo-900">The Spiritual Bible</strong>, a sacred sanctuary where the breath of God fills every word and awakens your soul.
-            </p>
-            <p>
-              This digital Bible experience is crafted with reverence, beauty, and a deep desire to inspire your spiritual journey.
-            </p>
-          </div>
+        keys.forEach((key) => {
+          const fav = favorites[key];
+          const item = document.createElement("div");
+          item.className = "favorite-item bg-indigo-50 rounded-lg p-3 mb-2 cursor-pointer";
+          item.setAttribute("role", "listitem");
+          item.tabIndex = 0;
+          item.title = `Go to ${fav.book} ${fav.chapter}:${fav.verse} (${fav.version.toUpperCase()})`;
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-indigo-100">
-              <h3 class="text-lg font-bold text-indigo-900 mb-3">Features</h3>
-              <ul class="space-y-2">
-                <li class="flex items-start">
-                  <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                  <span>Multiple Bible translations</span>
-                </li>
-                <li class="flex items-start">
-                  <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                  <span>Favorite and save meaningful verses</span>
-                </li>
-                <li class="flex items-start">
-                  <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                  <span>Add personal notes to reflect on scripture</span>
-                </li>
-                <li class="flex items-start">
-                  <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                  <span>Daily devotionals for spiritual growth</span>
-                </li>
-              </ul>
-            </div>
+          const text = fav.text.length > 60 ? fav.text.slice(0, 60) + "…" : fav.text;
+          item.innerHTML = `
+            <div class="font-medium">${fav.book} ${fav.chapter}:${fav.verse} (${fav.version.toUpperCase()})</div>
+            <div class="text-sm text-indigo-700 mt-1">${text}</div>
+          `;
+          
+          // On click, load that verse's chapter and highlight verse
+          item.addEventListener("click", () => {
+            bookSelect.value = fav.book;
+            SidebarComponent.populateChapters(fav.book);
+            chapterSelect.value = fav.chapter;
+            chapterSelect.disabled = false;
+            versionSelect.value = fav.version;
+            btnLoadChapter.disabled = false;
             
-
-          </div>
+            BibleContentComponent.loadChapter(fav.book, fav.chapter, fav.version).then(() => {
+              // After loading, highlight the verse
+              setTimeout(() => {
+                const verseEls = [...document.querySelectorAll(".verse")];
+                const targetVerse = verseEls.find(v => v.dataset.verseNumber == fav.verse);
+                
+                if (targetVerse) {
+                  if (selectedVerseElement) selectedVerseElement.classList.remove("selected");
+                  targetVerse.classList.add("selected");
+                  selectedVerseElement = targetVerse;
+                  btnCopySelected.disabled = false;
+                  targetVerse.scrollIntoView({behavior: "smooth", block: "center"});
+                }
+              }, 500);
+            });
+          });
           
-          <div class="bg-indigo-900 text-indigo-100 rounded-xl p-6 text-center">
-            <p class="italic font-playfair text-lg mb-2">
-              "Your word is a lamp to my feet and a light to my path." – Psalm 119:105
-            </p>
-            <p class="text-indigo-300">
-              May this digital sanctuary bless your spiritual journey.
-            </p>
-          </div>
-        </div>
-      `;
-    }
-    
-    // On book select change
-    bookSelect.addEventListener("change", (e) => {
-      const bookName = e.target.value;
-      populateChapters(bookName);
-      versesContainer.innerHTML = `<p class="text-center text-indigo-500 italic select-none text-xl max-w-3xl mx-auto leading-relaxed mt-12">Select a chapter to read the Word.</p>`;
-      chapterTitle.textContent = "Select Chapter";
-      clearSelectedVerse();
-      btnCopySelected.disabled = true;
-    });
-    
-    // On chapter select change
-    chapterSelect.addEventListener("change", () => {
-      btnLoadChapter.disabled = false;
-      clearSelectedVerse();
-      btnCopySelected.disabled = true;
-    });
-    
-    // On version select change
-    versionSelect.addEventListener("change", () => {
-      // If book and chapter selected, reload chapter with new version
-      if (bookSelect.value && chapterSelect.value) {
-        loadChapter(bookSelect.value, chapterSelect.value, versionSelect.value);
+          // Remove favorite button
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "remove-btn text-indigo-500 hover:text-indigo-700 mt-2 text-sm";
+          removeBtn.setAttribute("aria-label", `Remove favorite ${fav.book} ${fav.chapter}:${fav.verse}`);
+          removeBtn.innerHTML = "<i class='fas fa-trash-alt mr-1'></i> Remove";
+          removeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            delete favorites[key];
+            FavoritesNotesComponent.saveFavorites();
+            FavoritesNotesComponent.renderFavorites();
+          });
+          
+          item.appendChild(removeBtn);
+          favoritesList.appendChild(item);
+        });
+      },
+      
+      renderNotes: function() {
+        notesList.innerHTML = "";
+        const keys = Object.keys(notes);
+        
+        if (keys.length === 0) {
+          notesList.innerHTML = `<p class="text-indigo-500 italic select-none">No notes yet.</p>`;
+          return;
+        }
+        
+        keys.forEach((key) => {
+          const note = notes[key];
+          const item = document.createElement("div");
+          item.className = "note-item bg-indigo-50 rounded-lg p-3 mb-2 cursor-pointer";
+          item.setAttribute("role", "listitem");
+          item.tabIndex = 0;
+          item.title = `Go to note for ${note.book} ${note.chapter}:${note.verse} (${note.version.toUpperCase()})`;
+          
+          const previewText = note.noteText.length > 60 ? note.noteText.slice(0, 60) + "…" : note.noteText;
+          item.innerHTML = `
+            <div class="font-medium">${note.book} ${note.chapter}:${note.verse} (${note.version.toUpperCase()})</div>
+            <div class="text-sm text-indigo-700 mt-1">${previewText}</div>
+          `;
+          
+          // On click, open note modal to edit
+          item.addEventListener("click", () => {
+            ModalsComponent.openNoteModal(key);
+          });
+          
+          // Remove note button
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "remove-btn text-indigo-500 hover:text-indigo-700 mt-2 text-sm";
+          removeBtn.setAttribute("aria-label", `Remove note for ${note.book} ${note.chapter}:${note.verse}`);
+          removeBtn.innerHTML = "<i class='fas fa-trash-alt mr-1'></i> Remove";
+          removeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            delete notes[key];
+            FavoritesNotesComponent.saveNotes();
+            FavoritesNotesComponent.renderNotes();
+          });
+          
+          item.appendChild(removeBtn);
+          notesList.appendChild(item);
+        });
+      },
+      
+      generateVerseKey: function(book, chapter, verse, version) {
+        return `${book}_${chapter}_${verse}_${version}`;
+      },
+      
+      toggleFavorite: function(verseEl) {
+        const book = verseEl.dataset.book;
+        const chapter = verseEl.dataset.chapter;
+        const verseNum = verseEl.dataset.verseNumber;
+        const version = verseEl.dataset.version;
+        const text = verseEl.dataset.text;
+        const key = this.generateVerseKey(book, chapter, verseNum, version);
+        
+        if (favorites[key]) {
+          delete favorites[key];
+          verseEl.querySelector(".btn-favorite").classList.remove("favorited");
+        } else {
+          favorites[key] = { book, chapter, verse: verseNum, version, text };
+          verseEl.querySelector(".btn-favorite").classList.add("favorited");
+        }
+        
+        this.saveFavorites();
+        this.renderFavorites();
+      },
+      
+      addVerseControls: function(verseEl) {
+        // Create favorite star button
+        const favBtn = document.createElement("button");
+        favBtn.className = "btn-favorite absolute right-12 top-1/2 transform -translate-y-1/2 text-indigo-400 hover:text-yellow-500 focus:outline-none";
+        favBtn.setAttribute("aria-label", "Add or remove favorite");
+        favBtn.title = "Add or remove favorite";
+        favBtn.innerHTML = '<i class="fas fa-star text-xl"></i>';
+        
+        // Mark if already favorited
+        const key = this.generateVerseKey(
+          verseEl.dataset.book,
+          verseEl.dataset.chapter,
+          verseEl.dataset.verseNumber,
+          verseEl.dataset.version
+        );
+        
+        if (favorites[key]) {
+          favBtn.classList.add("favorited", "text-yellow-500");
+        }
+        
+        favBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.toggleFavorite(verseEl);
+        });
+        
+        // Create note button
+        const noteBtn = document.createElement("button");
+        noteBtn.className = "btn-note absolute right-4 top-1/2 transform -translate-y-1/2 text-indigo-400 hover:text-indigo-600 focus:outline-none";
+        noteBtn.setAttribute("aria-label", "Add or edit note");
+        noteBtn.title = "Add or edit note";
+        noteBtn.innerHTML = '<i class="fas fa-sticky-note text-xl"></i>';
+        
+        noteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          ModalsComponent.openNoteModal(key);
+        });
+        
+        verseEl.appendChild(favBtn);
+        verseEl.appendChild(noteBtn);
       }
-    });
+    };
     
-    // Load chapter button click
-    btnLoadChapter.addEventListener("click", () => {
-      const bookName = bookSelect.value;
-      const chapterNumber = chapterSelect.value;
-      const version = versionSelect.value;
-      if (bookName && chapterNumber && version) {
-        loadChapter(bookName, chapterNumber, version);
+    // ==================== MODALS COMPONENT ====================
+    const ModalsComponent = {
+      init: function() {
+        // Notes modal event listeners
+        btnCloseNotes.addEventListener("click", this.closeNoteModal);
+        btnCancelNote.addEventListener("click", this.closeNoteModal);
+        btnSaveNote.addEventListener("click", this.saveNote);
+        
+        // Close modal on Escape key
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !notesModal.classList.contains("hidden")) {
+            this.closeNoteModal();
+          }
+        });
+      },
+      
+      openNoteModal: function(verseKey) {
+        currentNoteVerseKey = verseKey;
+        const note = notes[verseKey];
+        
+        if (note) {
+          notesModalTitle.textContent = `Edit Note for ${note.book} ${note.chapter}:${note.verse} (${note.version.toUpperCase()})`;
+          notesModalDesc.textContent = `"${note.text}"`;
+          noteTextarea.value = note.noteText || "";
+        } else {
+          // Parse key to get verse info
+          const parts = verseKey.split("_");
+          if (parts.length === 4) {
+            notesModalTitle.textContent = `Add Note for ${parts[0]} ${parts[1]}:${parts[2]} (${parts[3].toUpperCase()})`;
+            notesModalDesc.textContent = "";
+            noteTextarea.value = "";
+          }
+        }
+        
+        notesModal.classList.remove("hidden");
+        notesModal.classList.add("flex");
+        noteTextarea.focus();
+      },
+      
+      closeNoteModal: function() {
+        notesModal.classList.add("hidden");
+        notesModal.classList.remove("flex");
+        currentNoteVerseKey = null;
+        noteTextarea.value = "";
+      },
+      
+      saveNote: function() {
+        if (!currentNoteVerseKey) return;
+        
+        const noteText = noteTextarea.value.trim();
+        if (noteText.length === 0) {
+          // If empty note, remove it
+          if (notes[currentNoteVerseKey]) {
+            delete notes[currentNoteVerseKey];
+            FavoritesNotesComponent.saveNotes();
+            FavoritesNotesComponent.renderNotes();
+          }
+        } else {
+          // Save or update note
+          // Parse key for verse info
+          const parts = currentNoteVerseKey.split("_");
+          if (parts.length === 4) {
+            notes[currentNoteVerseKey] = {
+              book: parts[0],
+              chapter: parts[1],
+              verse: parts[2],
+              version: parts[3],
+              noteText,
+              text: favorites[currentNoteVerseKey]?.text || "", // if favorite, keep verse text
+            };
+            FavoritesNotesComponent.saveNotes();
+            FavoritesNotesComponent.renderNotes();
+          }
+        }
+        
+        ModalsComponent.closeNoteModal();
       }
-    });
+    };
     
-    // Copy all verses button click
-    btnCopyAll.addEventListener("click", copyAllVerses);
-    
-    // Copy selected verse button click
-    btnCopySelected.addEventListener("click", copySelectedVerse);
-    
-    // Navigation buttons
-    btnToday.addEventListener("click", showTodaysVerse);
-    btnDevotion.addEventListener("click", showDevotionals);
-    btnAbout.addEventListener("click", showAbout);
-    
-    btnBible.addEventListener("click", () => {
-      document.getElementById("sidebar").scrollIntoView({ behavior: "smooth" });
-      chapterTitle.textContent = "Awaken Your Soul";
-      versesContainer.innerHTML = `
-        <p class="text-center text-indigo-500 italic select-none text-xl max-w-3xl mx-auto leading-relaxed">
-          "The breath of God whispers through these sacred words, awakening your spirit and illuminating your path. May you find peace, hope, and divine love here."
-        </p>
-        <div class="mt-10 max-w-3xl mx-auto bg-indigo-50 rounded-3xl p-8 shadow-lg border border-indigo-200 prose prose-indigo text-center text-indigo-900 select-text" id="initial-verse">
-          <p class="text-3xl font-playfair italic leading-relaxed mb-6 before:content-['"'] after:content-['"'] before:text-indigo-400 after:text-indigo-400 before:text-7xl after:text-7xl before:relative after:relative before:-left-4 after:-right-4">
-            "The Lord is my shepherd; I shall not want."
-          </p>
-          <p class="text-lg font-semibold mt-4 select-none">— Psalm 23:1 (NIV)</p>
-          <p class="mt-6 text-indigo-700 font-semibold">Let this timeless promise comfort and guide your heart today.</p>
-        </div>
-      `;
-      clearSelectedVerse();
-      btnCopySelected.disabled = true;
-    });
-    
-    // Toggle favorites/notes panel visibility
-    toggleFavoritesNotesBtn.addEventListener("click", () => {
-      favoritesNotesPanel.classList.toggle("hidden");
-      if (!favoritesNotesPanel.classList.contains("hidden")) {
-        favoritesNotesPanel.focus();
-      }
-    });
-    
-    // Close notes modal handlers
-    btnCloseNotes.addEventListener("click", closeNoteModal);
-    btnCancelNote.addEventListener("click", closeNoteModal);
-    
-    // Save note handler
-    btnSaveNote.addEventListener("click", saveNote);
-    
-    // Close modal on Escape key
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !notesModal.classList.contains("hidden")) {
-        closeNoteModal();
-      }
-    });
-    
-    // Initialize on page load
+    // ==================== INITIALIZATION ====================
     window.addEventListener("load", () => {
-      initBooks();
-      // Render favorites and notes from storage
-      renderFavorites();
-      renderNotes();
+      // Initialize all components
+      SidebarComponent.init();
+      BibleContentComponent.init();
+      HeaderComponent.init();
+      FavoritesNotesComponent.init();
+      ModalsComponent.init();
       
       // Set NIV as default version
       versionSelect.value = "niv";
@@ -1329,7 +1355,7 @@
       // Preselect a random book and chapter and load initial verse from it
       const randomBook = books[Math.floor(Math.random() * books.length)];
       bookSelect.value = randomBook.name;
-      populateChapters(randomBook.name);
+      SidebarComponent.populateChapters(randomBook.name);
       const randomChapter = Math.floor(Math.random() * randomBook.chapters) + 1;
       chapterSelect.value = randomChapter;
       chapterSelect.disabled = false;
